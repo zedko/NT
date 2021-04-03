@@ -1,11 +1,14 @@
-import datetime
+from datetime import datetime
 from typing import Union
 from functools import partial
 
 from moneyed import Money
 from moneyed.l10n import format_money
 
-p_format_money = partial(format_money, locale='en_US')  # Hardcoded due to task restrictions
+# Hardcoded due to task restrictions
+p_format_money = partial(format_money, locale='en_US')
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+CURRENCY = 'USD'
 
 
 class Operation:
@@ -19,8 +22,8 @@ class Operation:
         :param amount: Amount of money. Stored as Money type. Tt is best to avoid passing float type to __init__
         :param description: Description of the operation
         """
-        self.currency = 'USD'  # Hardcoded due to task restrictions
-        self.date = datetime.datetime.now().timestamp()
+        self.currency = CURRENCY
+        self.date = datetime.now()
 
         self._operation = self._set_operation(operation)
         self._amount = self._set_amount(amount)
@@ -28,7 +31,7 @@ class Operation:
         self.description = description or self._operation
 
     def __repr__(self) -> str:
-        string = f"timestamp: {self.date} | type: {self.operation} | amount: {self._amount_formatted} "
+        string = f"date: {self.date.strftime(DATE_FORMAT)} | type: {self.operation} | amount: {self._amount_formatted} "
         return string
 
     def get_table_row(self) -> list:
@@ -36,7 +39,7 @@ class Operation:
         Forms a list for future rendering
         :return: list of strings
         """
-        date = datetime.datetime.utcfromtimestamp(self.date).strftime('%Y-%m-%d %H:%M:%S')
+        date = self.date.strftime(DATE_FORMAT)
         withdrawals = self._amount_formatted if self._operation == 'withdraw' else ""
         deposits = self._amount_formatted if self._operation == 'deposit' else ""
 

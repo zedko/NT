@@ -1,5 +1,6 @@
 from collections import deque
 from functools import partial
+from datetime import datetime
 
 from moneyed import Money
 from moneyed.l10n import format_money
@@ -7,7 +8,17 @@ from prettytable import PrettyTable, ALL
 
 from operation import Operation
 
+# Hardcoded due to task restrictions
 p_format_money = partial(format_money, locale='en_US')
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+CURRENCY = 'USD'
+
+
+class BalanceException(Exception):
+    """
+    Raise when something wrong with Account balance
+    """
+    pass
 
 
 class OneAccountPerClientMeta(type):
@@ -30,7 +41,7 @@ class Account(metaclass=OneAccountPerClientMeta):
     """
 
     def __init__(self, client: str):
-        self.currency = 'USD'  # Hardcoded due to task restrictions
+        self.currency = CURRENCY
         self.client = client
         self.current_balance = Money(0, self.currency)
         self.operations = deque()
@@ -38,14 +49,16 @@ class Account(metaclass=OneAccountPerClientMeta):
     def __str__(self):
         return str(self.client)
 
-    # TODO check if current balance will be negative and raise err
     def add_operation(self, operation: Operation):
         """Adds and Operation to Account"""
-        self.operations.append(operation)
+        new_balance = self.change_balance(self.current_balance, operation)
+        if new_balance >= Money(0, self.currency):
+            self.operations.append(operation)
+            self.current_balance = new_balance
+        else:
+            raise BalanceException(f'Not enough money to proceed operation')
 
-    # TODO decide what time format to use
-    # TODO add type hints
-    def show_bank_statement(self, since, till) -> None:
+    def show_bank_statement(self, since: datetime, till: datetime) -> None:
         """
         Renders bank statement for a period between since and till
         """
@@ -76,8 +89,7 @@ class Account(metaclass=OneAccountPerClientMeta):
                        ])
         print(table)
 
-    # TODO add type hints
-    def generate_operations_report(self, since, till, row_balance: Money) -> dict:
+    def generate_operations_report(self, since: datetime, till: datetime, row_balance: Money) -> dict:
         """
         Generates a dict-like report about operations in a period of time
         :param since: Start of time period
@@ -113,8 +125,7 @@ class Account(metaclass=OneAccountPerClientMeta):
             return balance - operation.amount
         return balance + operation.amount
 
-    # TODO add type hints
-    def get_balance_by_date(self, date) -> Money:
+    def get_balance_by_date(self, date: datetime) -> Money:
         """
         Calculates account balance by iterating over operations. Assuming that list of operations is sorted by date
         :param date:  Date that will stop calculation
@@ -136,8 +147,12 @@ if __name__ == '__main__':
     opers.append(Operation('deposit', '20', 'test deposit'))
     opers.append(Operation('deposit', '0.1', 'test deposit'))
     opers.append(Operation('deposit', '40', 'test deposit'))
-    opers.append(Operation('withdraw', '80', 'test withdraw'))
+    opers.append(Operation('withdraw', '30', 'test withdraw'))
     for o in opers:
         a.add_operation(o)
-    a.show_bank_statement(1617380429.232319, 1717380429.232319)
+    since = datetime.strptime('2021-01-01 00:00:00', DATE_FORMAT)
+    till = datetime.strptime('2021-05-01 00:00:00', DATE_FORMAT)
+    a.show_bank_statement(since, till)
     assert a is b
+
+#TODO START handler class

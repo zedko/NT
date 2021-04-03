@@ -1,17 +1,12 @@
 from collections import deque
-from functools import partial
 from datetime import datetime
+from typing import Union
 
 from moneyed import Money
-from moneyed.l10n import format_money
 from prettytable import PrettyTable, ALL
 
-from operation import Operation
-
-# Hardcoded due to task restrictions
-p_format_money = partial(format_money, locale='en_US')
-DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-CURRENCY = 'USD'
+import bank_app.settings as settings
+from bank_app.operation import Operation
 
 
 class BalanceException(Exception):
@@ -40,8 +35,8 @@ class Account(metaclass=OneAccountPerClientMeta):
     Represents bank account for a client
     """
 
-    def __init__(self, client: str):
-        self.currency = CURRENCY
+    def __init__(self, client: str, currency: str = settings.CURRENCY):
+        self.currency = currency
         self.client = client
         self.current_balance = Money(0, self.currency)
         self.operations = deque()
@@ -49,7 +44,7 @@ class Account(metaclass=OneAccountPerClientMeta):
     def __str__(self):
         return str(self.client)
 
-    def add_operation(self, operation: Operation):
+    def add_operation(self, operation: Operation) -> None:
         """Adds and Operation to Account"""
         new_balance = self.change_balance(self.current_balance, operation)
         if new_balance >= Money(0, self.currency):
@@ -57,6 +52,13 @@ class Account(metaclass=OneAccountPerClientMeta):
             self.current_balance = new_balance
         else:
             raise BalanceException(f'Not enough money to proceed operation')
+
+    def create_and_add_operation(self, operation: str, amount: Union[str, int, float], description: str = None) -> None:
+        """
+        Creates Operation and then adds it to account (via self.add_operation). For desc check Operation.__init__
+        """
+        new_operation = Operation(operation, amount, description)
+        self.add_operation(new_operation)
 
     def show_bank_statement(self, since: datetime, till: datetime) -> None:
         """
@@ -74,7 +76,7 @@ class Account(metaclass=OneAccountPerClientMeta):
 
         # First row
         row_balance = self.get_balance_by_date(since)
-        table.add_row(['', 'Previous balance', '', '', p_format_money(row_balance)])
+        table.add_row(['', 'Previous balance', '', '', settings.p_format_money(row_balance)])
 
         # Main body (operations)
         operations_report = self.generate_operations_report(since, till, row_balance)
@@ -83,9 +85,9 @@ class Account(metaclass=OneAccountPerClientMeta):
         # Last row
         table.add_row(['',
                        'Totals',
-                       p_format_money(operations_report['withdrawals']),
-                       p_format_money(operations_report['deposits']),
-                       p_format_money(operations_report['total_balance']),
+                       settings.p_format_money(operations_report['withdrawals']),
+                       settings.p_format_money(operations_report['deposits']),
+                       settings.p_format_money(operations_report['total_balance']),
                        ])
         print(table)
 
@@ -108,7 +110,7 @@ class Account(metaclass=OneAccountPerClientMeta):
             if since <= operation.date <= till:
                 row = operation.get_table_row()
                 row_balance = self.change_balance(row_balance, operation)
-                row.append(p_format_money(row_balance))
+                row.append(settings.p_format_money(row_balance))
                 report["rows"].append(row)
                 report["total_balance"] = row_balance
                 if operation.operation == "withdraw":
@@ -150,9 +152,7 @@ if __name__ == '__main__':
     opers.append(Operation('withdraw', '30', 'test withdraw'))
     for o in opers:
         a.add_operation(o)
-    since = datetime.strptime('2021-01-01 00:00:00', DATE_FORMAT)
-    till = datetime.strptime('2021-05-01 00:00:00', DATE_FORMAT)
+    since = datetime.strptime('2021-01-01 00:00:00', settings.DATE_FORMAT)
+    till = datetime.strptime('2021-05-01 00:00:00', settings.DATE_FORMAT)
     a.show_bank_statement(since, till)
     assert a is b
-
-#TODO START handler class

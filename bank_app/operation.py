@@ -1,14 +1,9 @@
 from datetime import datetime
 from typing import Union
-from functools import partial
 
 from moneyed import Money
-from moneyed.l10n import format_money
 
-# Hardcoded due to task restrictions
-p_format_money = partial(format_money, locale='en_US')
-DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-CURRENCY = 'USD'
+import bank_app.settings as settings
 
 
 class Operation:
@@ -16,22 +11,27 @@ class Operation:
     Represents any single bank operation
     """
 
-    def __init__(self, operation: str, amount: Union[str, int, float], description: str = None):
+    def __init__(self, operation: str,
+                 amount: Union[str, int, float],
+                 description: str = None,
+                 currency: str = settings.CURRENCY):
         """
         :param operation: Type of operation. could be 'deposit' or 'withdraw'
         :param amount: Amount of money. Stored as Money type. Tt is best to avoid passing float type to __init__
         :param description: Description of the operation
         """
-        self.currency = CURRENCY
+        self.currency = currency
         self.date = datetime.now()
 
         self._operation = self._set_operation(operation)
         self._amount = self._set_amount(amount)
-        self._amount_formatted = p_format_money(self._amount)
+        self._amount_formatted = settings.p_format_money(self._amount)
         self.description = description or self._operation
 
     def __repr__(self) -> str:
-        string = f"date: {self.date.strftime(DATE_FORMAT)} | type: {self.operation} | amount: {self._amount_formatted} "
+        string = f"| date: {self.date.strftime(settings.DATE_FORMAT)} " \
+                 f"| type: {self.operation} " \
+                 f"| amount: {self._amount_formatted} "
         return string
 
     def get_table_row(self) -> list:
@@ -39,7 +39,7 @@ class Operation:
         Forms a list for future rendering
         :return: list of strings
         """
-        date = self.date.strftime(DATE_FORMAT)
+        date = self.date.strftime(settings.DATE_FORMAT)
         withdrawals = self._amount_formatted if self._operation == 'withdraw' else ""
         deposits = self._amount_formatted if self._operation == 'deposit' else ""
 

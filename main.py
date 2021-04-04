@@ -1,7 +1,9 @@
-import click
-from click_shell import shell
 from functools import wraps
 from datetime import datetime
+
+import click
+from click_shell import shell
+
 
 from bank_app import Account
 from bank_app.settings import DATE_FORMAT
@@ -84,12 +86,13 @@ def withdraw(client, amount, description=None):
 @click.option('-c', '--client', 'client', required=True, type=str)
 @click.option('-s', '--since', 'since',
               required=True,
-              type=click.DateTime(formats=[DATE_FORMAT, '=' + DATE_FORMAT])
+              type=click.DateTime(formats=[DATE_FORMAT, '=' + DATE_FORMAT]),
+              help=f"Use format {DATE_FORMAT}",
               )
 @click.option('-t', '--till', 'till',
               required=False,
               type=click.DateTime(formats=[DATE_FORMAT, '=' + DATE_FORMAT]),
-              help="test"
+              help=f"Use format {DATE_FORMAT}",
               )
 @_clear_options
 def show_bank_statement(client, since, till=datetime.now()):

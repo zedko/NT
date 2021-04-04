@@ -79,7 +79,7 @@ class Account(metaclass=OneAccountPerClientMeta):
         table.add_row(['', 'Previous balance', '', '', settings.p_format_money(row_balance)])
 
         # Main body (operations)
-        operations_report = self.generate_operations_report(since, till, row_balance)
+        operations_report = self._generate_operations_report(since, till, row_balance)
         table.add_rows(operations_report['rows'])
 
         # Last row
@@ -91,7 +91,7 @@ class Account(metaclass=OneAccountPerClientMeta):
                        ])
         print(table)
 
-    def generate_operations_report(self, since: datetime, till: datetime, row_balance: Money) -> dict:
+    def _generate_operations_report(self, since: datetime, till: datetime, row_balance: Money) -> dict:
         """
         Generates a dict-like report about operations in a period of time
         :param since: Start of time period
@@ -146,10 +146,10 @@ if __name__ == '__main__':
     a = Account("Joe")
     b = Account("Joe")
     opers = []
-    opers.append(Operation('deposit', '20', 'test deposit'))
-    opers.append(Operation('deposit', '0.1', 'test deposit'))
-    opers.append(Operation('deposit', '40', 'test deposit'))
-    opers.append(Operation('withdraw', '30', 'test withdraw'))
+    opers.append(Operation('deposit', '20', 'tests deposit'))
+    opers.append(Operation('deposit', '0.1', 'tests deposit'))
+    opers.append(Operation('deposit', '40', 'tests deposit'))
+    opers.append(Operation('withdraw', '30', 'tests withdraw'))
     for o in opers:
         a.add_operation(o)
     since = datetime.strptime('2021-01-01 00:00:00', settings.DATE_FORMAT)
